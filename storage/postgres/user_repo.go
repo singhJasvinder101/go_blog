@@ -73,3 +73,22 @@ func (r *UserRepo) GetUserPosts(ctx context.Context, userId int) ([]types.Post, 
 	return posts, nil
 }
 
+func (r *UserRepo) AddComment(ctx context.Context, comment types.Comment) (types.Comment, error){
+	query := `
+	insert into comments (content, user_id, post_id)
+	values ($1, $2, $3)
+	returning id, content, user_id, post_id, created_at
+	`
+
+	row := r.DB.Pool.QueryRow(ctx, query, comment.Content, comment.UserID, comment.PostID)
+
+	var val types.Comment
+	err := row.Scan(&val.ID, &val.Content, &val.UserID, &val.PostID, &val.CreatedAt)
+
+	if err != nil {
+		return types.Comment{}, fmt.Errorf("error when adding comment %w", err)
+	}
+
+	return val, nil
+}
+
