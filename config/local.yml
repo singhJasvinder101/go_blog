@@ -1,5 +1,7 @@
 env: "dev"
 storage_path: "storage/storage.db"
+# dummy db connection string (local postgres)
+db_conn: "postgresql://postgres:123@localhost:5432/go_blog?sslmode=disable"
 http_server:
   host: "localhost"
   port: 3000

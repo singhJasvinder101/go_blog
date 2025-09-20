@@ -10,12 +10,13 @@ import (
 
 type HttpServer struct {
 	Host string
-	Port int  
+	Port int
 }
 
 type Config struct {
-	Env        string    `yaml:"env"`
-	StoragePath string    `yaml:"storage_path"`
+	Env         string     `yaml:"env"`
+	StoragePath string     `yaml:"storage_path"`
+	DbConn      string     `yaml:"db_conn"`
 	HttpServer  HttpServer `yaml:"http_server"`
 }
 
@@ -24,7 +25,6 @@ func NewConfig() (*Config, error) {
 
 	flag.StringVar(&configPath, "config", "", "path to config file")
 	flag.Parse()
-
 
 	if configPath == "" {
 		return nil, fmt.Errorf("config file path is required")
@@ -36,11 +36,9 @@ func NewConfig() (*Config, error) {
 
 	var cfg Config
 	err := cleanenv.ReadConfig(configPath, &cfg)
-
 	if err != nil {
 		return nil, err
 	}
 
 	return &cfg, nil
 }
-

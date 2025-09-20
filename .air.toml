@@ -3,11 +3,10 @@ temp_dir = "tmp"
 
 [build]
     bin = "./tmp/main"
-    cmd = "go build -o ./tmp/main ./cmd/go_blog"
+    cmd = "go build -o ./tmp/main ./cmd/api"
     full_bin = "APP_ENV=dev ./tmp/main -config config/local.yml"
     include_ext = ["go", "yaml", "yml"]
     exclude_dir = ["tmp", "node_modules"]
     delay = 1000
     stop_on_error = true
 
-    

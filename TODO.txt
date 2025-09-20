@@ -1,0 +1,6 @@
+In comments schema on delete set null, remember in client side to
+mark as - Deleted User like reddit
+
+create interfaces for the storage module
+
+layering pattern (Postgres -> Repo -> Service -> Handler)
