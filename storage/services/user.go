@@ -20,7 +20,7 @@ func NewUserService(UserRepo *postgres.UserRepo) *UserService{
 	}
 }
 
-func (s *UserService) CreateUser(name, email, password string) (int, error) {
+func (s *UserService) Create(ctx context.Context,name, email, password string) (int, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return 0, errors.New("failed to hash password")
@@ -31,11 +31,15 @@ func (s *UserService) CreateUser(name, email, password string) (int, error) {
 		Email:        email,
 		PasswordHash: string(hashed),
 	}
-	return s.UserRepo.CreateUser(context.Background(), user)
+	return s.UserRepo.CreateUser(ctx, user)
 }
 
-func (s *UserService) GetUserByID(id int) (*types.User, error) {
-	return s.UserRepo.GetUserByID(context.Background(), id)
+func (s *UserService) GetByID(ctx context.Context, id int) (*types.User, error) {
+	return s.UserRepo.GetUserByID(ctx, id)
 }	
+
+func (s *UserService) GetByUID(ctx context.Context, userId int) ([]types.Post, error) {
+	return s.UserRepo.GetUserPosts(ctx, userId)
+}
 
 
