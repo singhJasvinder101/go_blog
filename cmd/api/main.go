@@ -36,12 +36,12 @@ func main() {
 
 	// for users
 	userRepo := postgres.NewUserRepo(db)
-	userService := services.NewUserService(userRepo)
-	userHandler := user_handlers.NewUserHandler(userService)
-
-	// for posts
 	postRepo := postgres.NewPostRepo(db)
+	
 	postService := services.NewPostService(postRepo)
+	userService := services.NewUserService(userRepo, postRepo)
+
+	userHandler := user_handlers.NewUserHandler(userService)
 	postHandler := post_handlers.NewPostHandler(postService)
 
 	// router setup
@@ -55,8 +55,11 @@ func main() {
 	router.POST("/api/users", userHandler.CreateUser)
 	router.GET("/api/users/:id", userHandler.GetUserByID)
 	router.GET("/api/users/:id/posts", userHandler.GetUserPosts)
+	router.POST("/api/users/:user_id/posts/:post_id/comment", userHandler.CreateUserComment)
 
 	router.POST("/api/posts", postHandler.CreatePost)
+	router.GET("/api/posts", postHandler.GetAllPosts)
+	router.GET("/api/posts/:id", postHandler.GetPostByID)
 
 	// server setup
 	router.Run(fmt.Sprintf(":%d", cfg.HttpServer.Port))

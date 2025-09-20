@@ -26,3 +26,11 @@ func (s *PostService) Create(ctx context.Context, title, description string, use
 	return s.PostRepo.CreatePost(ctx, &post)
 }
 
+func (s *PostService) GetByID(ctx context.Context, postId int) (types.Post, error){
+	return s.PostRepo.GetPostByID(ctx, postId)
+}
+
+func (s *PostService) GetAll(ctx context.Context) ([]types.Post, error) {
+	return s.PostRepo.GetAllPosts(ctx)
+}
+

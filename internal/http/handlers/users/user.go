@@ -98,6 +98,44 @@ func (h *UserHandler) GetUserPosts(c *gin.Context){
 	c.JSON(http.StatusOK, gin.H{
 		"posts": posts,
 	})
+}
 
+
+func (h * UserHandler) CreateUserComment(c *gin.Context){
+	ctx := c.Request.Context()
+	id_param1 := c.Param("user_id")
+	id_param2 := c.Param("post_id")
+
+	user_id, err1 := strconv.Atoi(id_param1)
+	if err1 != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse(errors.New("invalid user id parameter")))
+		return
+	}
+
+	post_id, err2 := strconv.Atoi(id_param2)
+	if err2 != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse(errors.New("invalid post id parameter")))
+		return
+	}
+
+	var body struct {
+		Content string `json:"content" binding:"required"`
+	}
+
+	err := c.ShouldBindJSON(&body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+		return
+	}
+
+	comment, err := h.service.CreateComment(ctx, body.Content, user_id, post_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse(err))
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"comment": comment,
+	})
 }
 
