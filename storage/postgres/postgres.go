@@ -9,8 +9,8 @@ import (
 )
 
 type Postgres struct {
-	DB   *pgxpool.Pool
-	conf *config.Config
+	Pool   *pgxpool.Pool
+	Conf *config.Config
 }
 
 func NewPostgres(cfg *config.Config) (*Postgres, error) {
@@ -24,13 +24,13 @@ func NewPostgres(cfg *config.Config) (*Postgres, error) {
 	// dbpool return hone se pehle hi pool close ho jayega.
 
 	return &Postgres{
-		DB:   db,
-		conf: cfg,
+		Pool:   db,
+		Conf: cfg,
 	}, nil
 }
 
 func (p *Postgres) InitSchema(ctx context.Context) error {
-	_, err := p.DB.Exec(ctx, `
+	_, err := p.Pool.Exec(ctx, `
 		create table if not exists users (
 			id serial primary key,
 			name text not null,
@@ -99,5 +99,5 @@ func (p *Postgres) InitSchema(ctx context.Context) error {
 }
 
 func (p *Postgres) Close() {
-	p.DB.Close()
+	p.Pool.Close()
 }

@@ -6,18 +6,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/singhJasvinder101/go_blog/internal/config"
-	"github.com/singhJasvinder101/go_blog/internal/http/handlers/users"
+	post_handlers "github.com/singhJasvinder101/go_blog/internal/http/handlers/posts"
+	user_handlers "github.com/singhJasvinder101/go_blog/internal/http/handlers/users"
 	"github.com/singhJasvinder101/go_blog/storage/postgres"
 	"github.com/singhJasvinder101/go_blog/storage/services"
 )
 
-
-func main()  {
+func main() {
 	println("Hello")
 
 	// configs setup
 	cfg, err := config.NewConfig()
-
 	if err != nil {
 		fmt.Println("error while loading config:", err.Error())
 		panic(err)
@@ -34,18 +33,30 @@ func main()  {
 	db.InitSchema(context.Background())
 
 	// Postgres -> Repo -> Service -> Handler
+
+	// for users
 	userRepo := postgres.NewUserRepo(db)
 	userService := services.NewUserService(userRepo)
-	userHandler := users.NewUserHandler(userService)
+	userHandler := user_handlers.NewUserHandler(userService)
+
+	// for posts
+	postRepo := postgres.NewPostRepo(db)
+	postService := services.NewPostService(postRepo)
+	postHandler := post_handlers.NewPostHandler(postService)
 
 	// router setup
 	router := gin.Default()
-	router.GET("/ping", func(c *gin.Context){
+	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
-	router.POST("/api/users", userHandler.CreateUserHandler)
+
+	router.POST("/api/users", userHandler.CreateUser)
+	router.GET("/api/users/:id", userHandler.GetUserByID)
+	router.GET("/api/users/:id/posts", userHandler.GetUserPosts)
+
+	router.POST("/api/posts", postHandler.CreatePost)
 
 	// server setup
 	router.Run(fmt.Sprintf(":%d", cfg.HttpServer.Port))
