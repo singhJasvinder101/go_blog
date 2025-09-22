@@ -7,7 +7,6 @@ import (
 
 	"github.com/singhJasvinder101/go_blog/internal/types"
 	"github.com/singhJasvinder101/go_blog/storage/postgres"
-	"golang.org/x/crypto/bcrypt"
 )
 
 
@@ -23,16 +22,12 @@ func NewUserService(UserRepo *postgres.UserRepo, postRepo *postgres.PostRepo) *U
 	}
 }
 
-func (s *UserService) Create(ctx context.Context,name, email, password string) (int, error) {
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return 0, errors.New("failed to hash password")
-	}
+func (s *UserService) Create(ctx context.Context,name, email, password string) (*types.User, error) {
 	
 	user := &types.User{
 		Name:         name,
 		Email:        email,
-		PasswordHash: string(hashed),
+		PasswordHash: string(password),
 	}
 	return s.UserRepo.CreateUser(ctx, user)
 }
@@ -43,6 +38,10 @@ func (s *UserService) GetByID(ctx context.Context, id int) (*types.User, error) 
 
 func (s *UserService) GetByUID(ctx context.Context, userId int) ([]types.Post, error) {
 	return s.UserRepo.GetUserPosts(ctx, userId)
+}
+
+func (s *UserService) GetByEmail(ctx context.Context, email string) (*types.User, error){
+	return s.UserRepo.GetUserByEmail(ctx, email)	
 }
 
 func (s *UserService) CreateComment(ctx context.Context, content string, userId, postId int) (types.Comment, error){

@@ -18,6 +18,7 @@ type Config struct {
 	StoragePath string     `yaml:"storage_path"`
 	DbConn      string     `yaml:"db_conn"`
 	HttpServer  HttpServer `yaml:"http_server"`
+	JwtSecret   string     `yaml:"jwt_secret"`
 }
 
 func NewConfig() (*Config, error) {
