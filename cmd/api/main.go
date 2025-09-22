@@ -8,6 +8,8 @@ import (
 	"github.com/singhJasvinder101/go_blog/internal/config"
 	post_handlers "github.com/singhJasvinder101/go_blog/internal/http/handlers/posts"
 	user_handlers "github.com/singhJasvinder101/go_blog/internal/http/handlers/users"
+	"github.com/singhJasvinder101/go_blog/internal/middleware"
+	"github.com/singhJasvinder101/go_blog/internal/utils/jwt"
 	"github.com/singhJasvinder101/go_blog/storage/postgres"
 	"github.com/singhJasvinder101/go_blog/storage/services"
 )
@@ -22,6 +24,10 @@ func main() {
 		panic(err)
 	}
 
+	// JWT setup
+	jwt.Init(cfg.JwtSecret)
+	print("config secret ", cfg.JwtSecret)
+
 	// DB setup
 	db, err := postgres.NewPostgres(cfg)
 	if err != nil {
@@ -34,10 +40,12 @@ func main() {
 
 	// Postgres -> Repo -> Service -> Handler
 
-	// for users
+	// depancies on each other
+	// repos initialization
 	userRepo := postgres.NewUserRepo(db)
 	postRepo := postgres.NewPostRepo(db)
 	
+	// services initialization
 	postService := services.NewPostService(postRepo)
 	userService := services.NewUserService(userRepo, postRepo)
 
@@ -51,15 +59,26 @@ func main() {
 			"message": "pong",
 		})
 	})
+	
+	router.POST("/api/users/register", userHandler.RegisterUser)
+	router.POST("/api/users/login", userHandler.LoginUser)
+	
+	// protected routes
+	protected := router.Group("/api")
+	protected.Use(middleware.AuthMiddleware())
+	{
+		// user routes
+		router.POST("/api/users", userHandler.CreateUser)
+		router.GET("/api/users/:id", userHandler.GetUserByID)
+		router.GET("/api/users/:id/posts", userHandler.GetUserPosts)
+		router.POST("/api/users/:user_id/posts/:post_id/comment", userHandler.CreateUserComment)
 
-	router.POST("/api/users", userHandler.CreateUser)
-	router.GET("/api/users/:id", userHandler.GetUserByID)
-	router.GET("/api/users/:id/posts", userHandler.GetUserPosts)
-	router.POST("/api/users/:user_id/posts/:post_id/comment", userHandler.CreateUserComment)
+		// posts routes
+		router.POST("/api/posts", postHandler.CreatePost)
+		router.GET("/api/posts", postHandler.GetAllPosts)
+		router.GET("/api/posts/:id", postHandler.GetPostByID)
+	}
 
-	router.POST("/api/posts", postHandler.CreatePost)
-	router.GET("/api/posts", postHandler.GetAllPosts)
-	router.GET("/api/posts/:id", postHandler.GetPostByID)
 
 	// server setup
 	router.Run(fmt.Sprintf(":%d", cfg.HttpServer.Port))

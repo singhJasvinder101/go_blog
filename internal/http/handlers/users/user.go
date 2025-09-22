@@ -2,10 +2,13 @@ package user_handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/singhJasvinder101/go_blog/internal/utils/hash"
+	"github.com/singhJasvinder101/go_blog/internal/utils/jwt"
 	"github.com/singhJasvinder101/go_blog/internal/utils/response"
 	"github.com/singhJasvinder101/go_blog/storage/services"
 )
@@ -45,6 +48,89 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		"user_id": id,
 	})
 }
+
+func (h *UserHandler) RegisterUser(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	var body struct {
+		Name     string `json:"name" binding:"required"`
+		Email    string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+		return
+	}
+
+	hashedPassword, err := hash.HashPassword(body.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse(err))
+		return
+	}
+
+    createdUser, err := h.service.Create(ctx, body.Name, body.Email, hashedPassword)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+	token, err := jwt.GenerateToken(createdUser.ID, createdUser.Name, createdUser.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse(err))
+		return
+	}
+
+	c.SetCookie("auth_token", token, 3600*24, "/", "localhost", false, true)
+	
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "user registered successfully",
+		"user":    createdUser,
+		"token":   token,
+	})
+	
+}
+
+func (h *UserHandler) LoginUser(c *gin.Context){
+	ctx := c.Request.Context()
+	
+	var body struct {
+		Email    string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+	
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse(err))
+		return
+	}
+
+	user, err := h.service.GetByEmail(ctx, body.Email)
+	if err != nil {
+		// c.JSON(http.StatusUnauthorized, response.ErrorResponse(fmt.Errorf("invalid email or password %w", err)))
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse(errors.New("invalid email or password")))
+		return
+	}
+
+	if err := hash.ComparePassword(body.Password, user.PasswordHash); err != nil {
+		println("hello2")
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse(fmt.Errorf("invalid email or password %w", err)))
+		// c.JSON(http.StatusUnauthorized, response.ErrorResponse(errors.New("invalid email or password")))
+		return
+	}
+	token, err := jwt.GenerateToken(user.ID, user.Name, user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse(err))
+		return
+	}
+	
+	c.SetCookie("auth_token", token, 3600*24, "/", "localhost", false, true)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "login successful",
+		"user":    user,
+		"token":   token,
+	})
+}
+
 
 func (h *UserHandler) GetUserByID(c *gin.Context){
 	ctx := c.Request.Context()

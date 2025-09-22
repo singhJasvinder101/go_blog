@@ -4,3 +4,4 @@ mark as - Deleted User like reddit
 create interfaces for the storage module
 
 layering pattern (Postgres -> Repo -> Service -> Handler)
+can it be decouple ??
