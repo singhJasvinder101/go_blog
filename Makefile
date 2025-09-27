@@ -19,12 +19,14 @@ build:
 # run the dev server
 run-dev:
 	docker stop postgres || true
-	docker compose up -d
+	docker stop redis || true
+	docker compose -f docker/docker-compose.yml up -d
 	air
 
 run-test:
 	docker stop postgres || true
-	docker compose up -d
+	docker stop redis || true
+	docker compose -f docker/docker-compose.yml up -d
 	go run $(SRC_PATH) -config $(CONFIG)
 
 # clean up binary

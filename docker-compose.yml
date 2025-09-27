@@ -1,9 +1,0 @@
-services:
-  db:
-    image: postgres
-    container_name: postgres
-    environment:
-      POSTGRES_PASSWORD: 123  # <~ insert your own password here
-      POSTGRES_DB: go_blog
-    ports: 
-      - "5432:5432"

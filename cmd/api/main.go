@@ -11,6 +11,7 @@ import (
 	"github.com/singhJasvinder101/go_blog/internal/middleware"
 	"github.com/singhJasvinder101/go_blog/internal/utils/jwt"
 	"github.com/singhJasvinder101/go_blog/storage/postgres"
+	"github.com/singhJasvinder101/go_blog/storage/redis"
 	"github.com/singhJasvinder101/go_blog/storage/services"
 )
 
@@ -28,6 +29,22 @@ func main() {
 	jwt.Init(cfg.JwtSecret)
 	println("config secret ", cfg.JwtSecret)
 
+	//redis setup
+	rdb, err := redis.NewRedisClient(cfg, 0)
+	if err != nil {
+		fmt.Println("error while connecting to redis:", err.Error())
+		panic(err)
+	}
+	defer rdb.Client.Close()
+
+	ctx := context.Background()
+	pong, err := rdb.Client.Ping(ctx).Result()
+    	if err != nil {
+    		fmt.Println("Could not connect to Redis:", err)
+    		return
+    	}
+    	fmt.Println("Connected to Redis:", pong)
+
 	// DB setup
 	db, err := postgres.NewPostgres(cfg)
 	if err != nil {
@@ -35,7 +52,7 @@ func main() {
 		panic(err)
 	}
 
-	// All tables creation
+	// all tables creation
 	db.InitSchema(context.Background())
 
 	// Postgres -> Repo -> Service -> Handler
@@ -46,8 +63,8 @@ func main() {
 	postRepo := postgres.NewPostRepo(db)
 	
 	// services initialization
-	postService := services.NewPostService(postRepo)
-	userService := services.NewUserService(userRepo, postRepo)
+	postService := services.NewPostService(postRepo, rdb)
+	userService := services.NewUserService(userRepo, postRepo, rdb)
 
 	userHandler := user_handlers.NewUserHandler(userService)
 	postHandler := post_handlers.NewPostHandler(postService)

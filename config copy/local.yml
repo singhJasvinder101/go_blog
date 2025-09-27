@@ -1,0 +1,8 @@
+env: "dev"
+storage_path: "storage/storage.db"
+db_conn: 
+redis_conn:
+jwt_secret: 
+http_server:
+  host: "localhost"
+  port: 3000

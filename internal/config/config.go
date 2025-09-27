@@ -19,6 +19,7 @@ type Config struct {
 	DbConn      string     `yaml:"db_conn"`
 	HttpServer  HttpServer `yaml:"http_server"`
 	JwtSecret   string     `yaml:"jwt_secret"`
+	RedisConn   string     `yaml:"redis_conn"`
 }
 
 func NewConfig() (*Config, error) {
