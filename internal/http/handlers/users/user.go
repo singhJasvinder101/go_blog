@@ -111,9 +111,14 @@ func (h *UserHandler) LoginUser(c *gin.Context){
 		return
 	}
 
-	if err := hash.ComparePassword(body.Password, user.PasswordHash); err != nil {
+	if body.Password == "" || user.PasswordHash == "" {
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse(errors.New("invalid email or password")))
+		return
+	}
+
+	if err := hash.ComparePassword(user.PasswordHash, body.Password); err != nil {
 		println("hello2")
-		c.JSON(http.StatusUnauthorized, response.ErrorResponse(fmt.Errorf("invalid email or password %w", err)))
+    	c.JSON(http.StatusUnauthorized, response.ErrorResponse(fmt.Errorf("invalid email or password %w", err)))
 		// c.JSON(http.StatusUnauthorized, response.ErrorResponse(errors.New("invalid email or password")))
 		return
 	}
