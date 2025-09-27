@@ -26,7 +26,7 @@ func main() {
 
 	// JWT setup
 	jwt.Init(cfg.JwtSecret)
-	print("config secret ", cfg.JwtSecret)
+	println("config secret ", cfg.JwtSecret)
 
 	// DB setup
 	db, err := postgres.NewPostgres(cfg)

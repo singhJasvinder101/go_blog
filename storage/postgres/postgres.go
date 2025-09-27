@@ -9,7 +9,7 @@ import (
 )
 
 type Postgres struct {
-	Pool   *pgxpool.Pool
+	Pool *pgxpool.Pool
 	Conf *config.Config
 }
 
@@ -20,11 +20,12 @@ func NewPostgres(cfg *config.Config) (*Postgres, error) {
 		return nil, err
 	}
 
+	println("DB connected")
 	// defer db.Close()
 	// dbpool return hone se pehle hi pool close ho jayega.
 
 	return &Postgres{
-		Pool:   db,
+		Pool: db,
 		Conf: cfg,
 	}, nil
 }
@@ -35,7 +36,7 @@ func (p *Postgres) InitSchema(ctx context.Context) error {
 			id serial primary key,
 			name text not null,
 			email text unique not null,
-			password_hash text not null,
+			password_hash varchar(255) not null,
  
 			created_at timestamp default current_timestamp,
 			updated_at timestamp default current_timestamp
