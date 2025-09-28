@@ -11,21 +11,21 @@ import (
 	"time"
 
 	"github.com/singhJasvinder101/go_blog/internal/types"
-	"github.com/singhJasvinder101/go_blog/storage/postgres"
-	"github.com/singhJasvinder101/go_blog/storage/redis"
 
 	go_redis "github.com/redis/go-redis/v9"
 )
 
+//tests must not depend on concrete objects instances instead 
+//manually write all the interfaces of that object and fake implement each
 type UserService struct {
-	UserRepo    *postgres.UserRepo
-	PostRepo    *postgres.PostRepo
-	RedisClient *redis.RedisClient
+	UserRepo    UserRepository
+	PostRepo    PostRepository
+	RedisClient Cache
 }
 
 // DO NOT EXPOSE REDIS ERRORS INSTEAD EXPOSE ONLY UNEXPECTED ERRORS
 
-func NewUserService(UserRepo *postgres.UserRepo, postRepo *postgres.PostRepo, redisClient *redis.RedisClient) *UserService {
+func NewUserService(UserRepo UserRepository, postRepo PostRepository, redisClient Cache	) *UserService {
 	return &UserService{
 		UserRepo:    UserRepo,
 		PostRepo:    postRepo,
@@ -48,7 +48,7 @@ func (s *UserService) Create(ctx context.Context, name, email, password string) 
 	user_created_cache_key := fmt.Sprintf("user:%d", createdUser.ID)
 	data, _ := json.Marshal(createdUser)
 
-	s.RedisClient.Client.Set(ctx, user_created_cache_key, data, 0)
+	s.RedisClient.Set(ctx, user_created_cache_key, data, 0)
 
 	return createdUser, nil
 }
@@ -56,7 +56,7 @@ func (s *UserService) Create(ctx context.Context, name, email, password string) 
 func (s *UserService) GetByID(ctx context.Context, id int) (*types.User, error) {
 	user_cache_key := fmt.Sprintf("user:%d", id)
 
-	data, err := s.RedisClient.Client.Get(ctx, user_cache_key).Result()
+	data, err := s.RedisClient.Get(ctx, user_cache_key)
 	// (err == go_redis.Nil)  => cache miss
 
 
@@ -79,7 +79,7 @@ func (s *UserService) GetByID(ctx context.Context, id int) (*types.User, error) 
 	}
 
 	marshaledData, _ := json.Marshal(user)
-	s.RedisClient.Client.Set(ctx, user_cache_key, marshaledData, 5*time.Minute)
+	s.RedisClient.Set(ctx, user_cache_key, marshaledData, 5*time.Minute)
 	
 	return user, nil
 }
@@ -87,7 +87,7 @@ func (s *UserService) GetByID(ctx context.Context, id int) (*types.User, error) 
 func (s *UserService) GetByUID(ctx context.Context, userId int) ([]types.Post, error) {
 	user_cache_key := fmt.Sprintf("user_posts:%d", userId)
 
-	data, err := s.RedisClient.Client.Get(ctx, user_cache_key).Result()
+	data, err := s.RedisClient.Get(ctx, user_cache_key)
 
 	if err != nil && err != go_redis.Nil {
         return nil, err 
@@ -109,7 +109,7 @@ func (s *UserService) GetByUID(ctx context.Context, userId int) ([]types.Post, e
 	}
 
 	marshaledData, _ := json.Marshal(posts)
-	s.RedisClient.Client.Set(ctx, user_cache_key, marshaledData, 5*time.Minute)
+	s.RedisClient.Set(ctx, user_cache_key, marshaledData, 5*time.Minute)
 
 	return posts, nil
 }
@@ -117,7 +117,7 @@ func (s *UserService) GetByUID(ctx context.Context, userId int) ([]types.Post, e
 func (s *UserService) GetByEmail(ctx context.Context, email string) (*types.User, error) {
 	user_cache_key := fmt.Sprintf("user_get_by_email:%s", email)
 
-	data, err := s.RedisClient.Client.Get(ctx, user_cache_key).Result()
+	data, err := s.RedisClient.Get(ctx, user_cache_key)
 	
 	if err != nil && err != go_redis.Nil {
 		return nil, err 
@@ -138,7 +138,7 @@ func (s *UserService) GetByEmail(ctx context.Context, email string) (*types.User
 	}
 	
 	marshaledData, _ := json.Marshal(user)
-	s.RedisClient.Client.Set(ctx, user_cache_key, marshaledData, 5*time.Minute)
+	s.RedisClient.Set(ctx, user_cache_key, marshaledData, 5*time.Minute)
 
 	return user, nil
 }

@@ -10,18 +10,16 @@ import (
 	"time"
 
 	"github.com/singhJasvinder101/go_blog/internal/types"
-	"github.com/singhJasvinder101/go_blog/storage/postgres"
-	"github.com/singhJasvinder101/go_blog/storage/redis"
 
 	go_redis "github.com/redis/go-redis/v9"
 )
 
 type PostService struct {
-	PostRepo   *postgres.PostRepo
-	RedisClient *redis.RedisClient
+	PostRepo   PostRepository
+	RedisClient Cache
 }
 
-func NewPostService(postRepo *postgres.PostRepo, redisClient *redis.RedisClient) *PostService{
+func NewPostService(postRepo PostRepository, redisClient Cache) *PostService{
 	return &PostService{
 		PostRepo:   postRepo,
 		RedisClient: redisClient,
@@ -42,7 +40,7 @@ func (s *PostService) Create(ctx context.Context, title, description string, use
 
 	post_cache_key := fmt.Sprintf("post:%d", createdPostID)
 	marshaledData, _ := json.Marshal(createdPostID)
-	s.RedisClient.Client.Set(ctx, post_cache_key, marshaledData, 5*time.Minute)
+	s.RedisClient.Set(ctx, post_cache_key, marshaledData, 5*time.Minute)
 
 	return createdPostID, nil
 }
@@ -50,7 +48,7 @@ func (s *PostService) Create(ctx context.Context, title, description string, use
 func (s *PostService) GetByID(ctx context.Context, postId int) (types.Post, error){
 	post_cache_key := fmt.Sprintf("post:%d", postId)
 	
-	data, err := s.RedisClient.Client.Get(ctx, post_cache_key).Result()
+	data, err := s.RedisClient.Get(ctx, post_cache_key)
 	// (err == go_redis.Nil)  => cache miss
 	
 	if err != nil && err != go_redis.Nil {
@@ -73,7 +71,7 @@ func (s *PostService) GetByID(ctx context.Context, postId int) (types.Post, erro
 	}
 	
 	marshaledData, _ := json.Marshal(post)
-	s.RedisClient.Client.Set(ctx, post_cache_key, marshaledData, 5*time.Minute)
+	s.RedisClient.Set(ctx, post_cache_key, marshaledData, 5*time.Minute)
 
 	return post, nil
 }
@@ -81,7 +79,7 @@ func (s *PostService) GetByID(ctx context.Context, postId int) (types.Post, erro
 func (s *PostService) GetAll(ctx context.Context) ([]types.Post, error) {
 	posts_cache_key := "posts:all"
 
-	data, err := s.RedisClient.Client.Get(ctx, posts_cache_key).Result()
+	data, err := s.RedisClient.Get(ctx, posts_cache_key)
 	// (err == go_redis.Nil)  => cache miss
 
 	if err != nil && err != go_redis.Nil {
@@ -104,7 +102,7 @@ func (s *PostService) GetAll(ctx context.Context) ([]types.Post, error) {
 	}
 
 	marshaledData, _ := json.Marshal(posts)
-	s.RedisClient.Client.Set(ctx, posts_cache_key, marshaledData, 5*time.Minute)
+	s.RedisClient.Set(ctx, posts_cache_key, marshaledData, 5*time.Minute)
 
 	return posts, nil
 }

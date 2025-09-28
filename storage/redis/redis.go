@@ -1,7 +1,9 @@
 package redis
 
 import (
+	"context"
 	"strconv"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/singhJasvinder101/go_blog/internal/config"
@@ -23,4 +25,12 @@ func NewRedisClient(cfg *config.Config, db int) (*RedisClient, error) {
 	return &RedisClient{
 		Client: client,
 	}, nil
+}
+
+func (r *RedisClient) Get(ctx context.Context, key string) (string, error) {
+	return r.Client.Get(ctx, key).Result()
+}
+
+func (r *RedisClient) Set(ctx context.Context, key string, val interface{}, exp time.Duration) error {
+	return r.Client.Set(ctx, key, val, exp).Err()
 }
