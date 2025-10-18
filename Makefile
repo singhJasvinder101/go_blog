@@ -17,13 +17,13 @@ build:
 	go build -o $(BIN_PATH) $(SRC_PATH)
 
 # run the dev server
-run-dev:
+run-dev: wire
 	docker stop postgres || true
 	docker stop redis || true
 	docker compose -f docker/docker-compose.yml up -d
 	air
 
-run-test:
+run-test: wire
 	docker stop postgres || true
 	docker stop redis || true
 	docker compose -f docker/docker-compose.yml up -d
@@ -32,6 +32,14 @@ run-test:
 # clean up binary
 clean:
 	rm -f $(BIN_PATH)
+
+# generates wire dependencies
+wire:
+	cd cmd/api && wire
+
+# build with wire generation
+build: wire
+	go build -o $(BIN_PATH) $(SRC_PATH)
 
 # run tests
 test:
