@@ -24,7 +24,6 @@ func InitializeApplication(cfg *config.Config) (*Application, error) {
 		return nil, err
 	}
 	userRepo := postgres.NewUserRepo(postgresPostgres)
-	userRepository := ProvideUserRepository(userRepo)
 	postRepo := postgres.NewPostRepo(postgresPostgres)
 	postRepository := ProvidePostRepository(postRepo)
 	redisClient, err := ProvideRedisClient(cfg)
@@ -32,7 +31,7 @@ func InitializeApplication(cfg *config.Config) (*Application, error) {
 		return nil, err
 	}
 	cache := ProvideCache(redisClient)
-	userService := services.NewUserService(userRepository, postRepository, cache)
+	userService := services.NewUserService(userRepo, postRepository, cache)
 	userHandler := user_handlers.NewUserHandler(userService)
 	postService := services.NewPostService(postRepository, cache)
 	postHandler := post_handlers.NewPostHandler(postService)
@@ -52,10 +51,10 @@ func ProvideRedisClient(cfg *config.Config) (*redis.RedisClient, error) {
 }
 
 // interface bindings (concrete types to interfaces)
-func ProvideUserRepository(repo *postgres.UserRepo) services.UserRepository {
-	return repo
-}
-
+//
+//	func ProvideUserRepository(repo *postgres.UserRepo) services.UserRepository {
+//	   return repo
+//	}
 func ProvidePostRepository(repo *postgres.PostRepo) services.PostRepository {
 	return repo
 }
@@ -65,8 +64,7 @@ func ProvideCache(client *redis.RedisClient) services.Cache {
 }
 
 // all providers ka set (constructors/New functions)
-var ProviderSet = wire.NewSet(postgres.NewPostgres, ProvideRedisClient, postgres.NewUserRepo, postgres.NewPostRepo, ProvideUserRepository,
-	ProvidePostRepository,
+var ProviderSet = wire.NewSet(postgres.NewPostgres, ProvideRedisClient, postgres.NewUserRepo, postgres.NewPostRepo, wire.Bind(new(services.UserRepository), new(*postgres.UserRepo)), ProvidePostRepository,
 	ProvideCache, services.NewUserService, services.NewPostService, user_handlers.NewUserHandler, post_handlers.NewPostHandler,
 )
 

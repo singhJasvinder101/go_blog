@@ -18,9 +18,9 @@ func ProvideRedisClient(cfg *config.Config) (*redis.RedisClient, error) {
 }
 
 //interface bindings (concrete types to interfaces)
-func ProvideUserRepository(repo *postgres.UserRepo) services.UserRepository {
-    return repo
-}
+//func ProvideUserRepository(repo *postgres.UserRepo) services.UserRepository {
+//    return repo
+//}
 func ProvidePostRepository(repo *postgres.PostRepo) services.PostRepository {
     return repo
 }
@@ -40,7 +40,7 @@ var ProviderSet = wire.NewSet(
 	postgres.NewPostRepo,
 
 	//interface bindings
-	ProvideUserRepository,
+	wire.Bind(new(services.UserRepository), new(*postgres.UserRepo)),
 	ProvidePostRepository,
 	ProvideCache,
 
